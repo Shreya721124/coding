@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Library Book Borrowing System</title>
+<style>
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f4f4}
+  .container{width:90%;max-width:1000px;margin:20px auto;background:#fff;padding:20px;border-radius:10px;box-shadow:0 2px 10px #ccc}
+  h1{text-align:center;color:#2b6cb0}
+  input,button{padding:10px;border-radius:6px;border:1px solid #ccc;margin:5px}
+  button{background:#2b6cb0;color:#fff;border:none;cursor:pointer}
+  button:hover{opacity:.9}
+  #books .book{border:1px solid #ddd;padding:10px;background:#fafafa;margin:10px 0;border-radius:8px}
+  .actions button{margin-left:5px}
+  .borrowed{background:#ffe5e5;border-color:#ff6b6b}
+  .muted{color:#666;font-size:0.95rem}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Library Book Borrowing System</h1>
+
+  <h2>Add New Book</h2>
+  <input type="text" id="title" placeholder="Book Title">
+  <input type="text" id="author" placeholder="Author">
+  <button id="btnAdd">Add Book</button>
+
+  <h2>Search</h2>
+  <input type="text" id="search" placeholder="Search books (title or author)...">
+
+  <h2>Book List</h2>
+  <div id="books"></div>
+  <p class="muted">Data saved in your browser (localStorage).</p>
+</div>
+
+<script>
+  
+  let books = JSON.parse(localStorage.getItem("books") || "[]");
+
+  
+  function saveBooks(){
+    localStorage.setItem("books", JSON.stringify(books));
+  }
+
+  function addBook(){
+    const title = (document.getElementById("title").value || "").trim();
+    const author = (document.getElementById("author").value || "").trim();
+
+    if (!title) {
+      alert("Book title is required");
+      return;
+    }
+
+    books.push({ title, author, status: "available", borrower: "" });
+    saveBooks();
+    displayBooks();
+    document.getElementById("title").value = "";
+    document.getElementById("author").value = "";
+  }
+
+
+  function borrowBook(index){
+    const name = prompt("Enter borrower name:");
+    if (!name) return;
+    books[index].status = "borrowed";
+    books[index].borrower = name;
+    saveBooks();
+    displayBooks();
+  }
+
+
+  function returnBook(index){
+    books[index].status = "available";
+    books[index].borrower = "";
+    saveBooks();
+    displayBooks();
+  }
+
+  function deleteBook(index){
+    if (!confirm("Delete this book?")) return;
+    books.splice(index,1);
+    saveBooks();
+    displayBooks();
+  }
+
+  
+  function displayBooks(){
+    const q = (document.getElementById("search").value || "").toLowerCase();
+    const bookDiv = document.getElementById("books");
+    bookDiv.innerHTML = "";
+
+    if (!books.length) {
+      bookDiv.innerHTML = '<div class="book">No books yet. Add new books above.</div>';
+      return;
+    }
+
+   
+    const filtered = books.filter(b => {
+      const t = (b.title || "").toLowerCase();
+      const a = (b.author || "").toLowerCase();
+      return t.includes(q) || a.includes(q);
+    });
+
+    if (!filtered.length) {
+      bookDiv.innerHTML = '<div class="book">No matching books found.</div>';
+      return;
+    }
+
+    filtered.forEach((b, i) => {
+     
+      const originalIndex = books.indexOf(b);
+
+      const div = document.createElement("div");
+      div.className = "book " + (b.status === "borrowed" ? "borrowed" : "");
+      div.innerHTML = `
+        <strong>${escapeHtml(b.title)}</strong> by ${escapeHtml(b.author || "Unknown")}<br>
+        Status: <b>${escapeHtml(b.status)}</b>
+        ${b.status === "borrowed" ? `<br>Borrower: <b>${escapeHtml(b.borrower)}</b>` : ""}
+        <div class="actions" style="margin-top:8px">
+          ${b.status === "available"
+            ? `<button onclick="borrowBook(${originalIndex})">Borrow</button>`
+            : `<button onclick="returnBook(${originalIndex})" style="background:#e53e3e">Return</button>`}
+          <button onclick="deleteBook(${originalIndex})" style="background:#555">Delete</button>
+        </div>
+      `;
+      bookDiv.appendChild(div);
+    });
+  }
+
+  
+  function escapeHtml(s){
+    return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+
+  document.getElementById("btnAdd").addEventListener("click", addBook);
+  document.getElementById("search").addEventListener("input", displayBooks);
+
+  
+  displayBooks();
+
+</script>
+</body>
+</html>

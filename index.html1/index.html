@@ -1,0 +1,92 @@
+<script>
+    let books = JSON.parse(localStorage.getItem("books") || "[]");
+
+    function saveBooks() {
+        localStorage.setItem("books", JSON.stringify(books));
+    }
+
+    function addBook() {
+        let title = document.getElementById("title").value.trim();
+        let author = document.getElementById("author").value.trim();
+
+        if (!title) {
+            alert("Book title is required");
+            return;
+        }
+
+        books.push({
+            title,
+            author,
+            status: "available",
+            borrower: ""
+        });
+
+        saveBooks();
+        displayBooks();
+
+        document.getElementById("title").value = "";
+        document.getElementById("author").value = "";
+    }
+
+    function borrowBook(index) {
+        let name = prompt("Enter borrower name:");
+
+        if (name) {
+            books[index].status = "borrowed";
+            books[index].borrower = name;
+            saveBooks();
+            displayBooks();
+        }
+    }
+
+    function returnBook(index) {
+        books[index].status = "available";
+        books[index].borrower = "";
+        saveBooks();
+        displayBooks();
+    }
+
+    function deleteBook(index) {
+        if (confirm("Delete this book?")) {
+            books.splice(index, 1);
+            saveBooks();
+            displayBooks();
+        }
+    }
+
+    // ✅ SEARCH FUNCTION (working version)
+    document.getElementById("search").addEventListener("input", function () {
+        displayBooks();
+    });
+
+    function displayBooks() {
+        let search = document.getElementById("search").value.toLowerCase();
+        let bookDiv = document.getElementById("books");
+        bookDiv.innerHTML = "";
+
+        books
+        .filter(b => 
+            b.title.toLowerCase().includes(search) ||
+            b.author.toLowerCase().includes(search)
+        )
+        .forEach((b, i) => {
+            let div = document.createElement("div");
+            div.className = "book " + (b.status === "borrowed" ? "borrowed" : "");
+
+            div.innerHTML = `
+                <strong>${b.title}</strong> by ${b.author || "Unknown"} <br>
+                Status: <b>${b.status}</b>
+                ${b.status === "borrowed" ? `<br>Borrower: <b>${b.borrower}</b>` : ""}
+                <div class="actions">
+                    ${b.status === "available" 
+                        ? `<button onclick="borrowBook(${i})">Borrow</button>` 
+                        : `<button onclick="returnBook(${i})" style="background:#e53e3e">Return</button>`}
+                    <button onclick="deleteBook(${i})" style="background:#555">Delete</button>
+                </div>
+            `;
+            bookDiv.appendChild(div);
+        });
+    }
+
+    displayBooks();
+</script>
